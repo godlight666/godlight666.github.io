@@ -1,0 +1,701 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/icon.jpeg">
+  <link rel="icon" href="/icon.jpeg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Ker">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Project">
+<meta property="og:url" content="http://example.com/2022/06/28/DB_Notes/project1-Buffer_Pool/index.html">
+<meta property="og:site_name" content="Ker&#39;s Blog">
+<meta property="og:description" content="Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-06-28T11:39:14.611Z">
+<meta property="article:modified_time" content="2022-06-28T11:39:14.611Z">
+<meta property="article:author" content="Ker">
+<meta property="article:tag" content="DataBase">
+<meta property="article:tag" content="CMU15-445">
+<meta property="article:tag" content="实验笔记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Project - Ker&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Ker&#39;s Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Project"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-06-28 19:39" pubdate>
+          2022年6月28日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Project</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="Buffer-Pool实现"><a href="#Buffer-Pool实现" class="headerlink" title="Buffer Pool实现"></a>Buffer Pool实现</h1><h2 id="LRU-Replacer"><a href="#LRU-Replacer" class="headerlink" title="LRU Replacer"></a>LRU Replacer</h2><p>关键数据结构：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾</span><br>std::list&lt;<span class="hljs-type">frame_id_t</span>&gt; queue_;<br><span class="hljs-comment">// 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除</span><br>std::unordered_map&lt;<span class="hljs-type">frame_id_t</span>, std::list&lt;<span class="hljs-type">frame_id_t</span>&gt;::iterator&gt; map_;<br></code></pre></td></tr></table></figure>
+
+<p>关键实现逻辑：</p>
+<ol>
+<li>frame：<strong>frame表示的是buffer_pool中格子的索引</strong>，可以用来存放不同的page，格子总是那么多。<ol>
+<li>所以Victim()表示找到该frame并且新读入的page可以写入该frame</li>
+<li>Pin表示该frame中的page有用，新来的page不要用该frame</li>
+<li>Unpin表示该frame中的page用不上，可以被取代，该frame可写入。</li>
+</ol>
+</li>
+<li>LRU的逻辑：很巧妙，<strong>多次Unpin并不表示该page被新使用了，所以Unpin时如果该frame在replacer中并不需要将该frame提到queue的头部</strong>，该page被访问或者被使用的时候都会调用Pin，而这时候会将该frame移出，所以每次被使用的时候都会移出replacer，<strong>新加入的就会比后面的更晚被使用，因为如果后面的有更新被使用的都从queue中被移除了</strong>。</li>
+</ol>
+<h2 id="Buffer-Pool-Manager"><a href="#Buffer-Pool-Manager" class="headerlink" title="Buffer Pool Manager"></a>Buffer Pool Manager</h2><p>关键数据结构：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">/** Array of buffer pool pages. 即buffer_pool数组，数组中各个元素指向各个page。该数组的索引即为frame_id*/</span><br>Page *pages_;<br><span class="hljs-comment">/** Page table for keeping track of buffer pool pages. 存放page_id到frame_id的映射*/</span><br>std::unordered_map&lt;<span class="hljs-type">page_id_t</span>, <span class="hljs-type">frame_id_t</span>&gt; page_table_;<br><span class="hljs-comment">/** Replacer to find unpinned pages for replacement. 用来实现page替换算法，上面的LRU是它的子类*/</span><br>Replacer *replacer_;<br><span class="hljs-comment">/** List of free pages. 记录空着的没用的frame*/</span><br>std::list&lt;<span class="hljs-type">frame_id_t</span>&gt; free_list_;<br></code></pre></td></tr></table></figure>
+
+<p>关键实现逻辑：</p>
+<ol>
+<li>索引：指针数组pages_就是buffer_pool，<strong>它的索引就是frame_id</strong>，表示buffer_pool中的位置。</li>
+<li>放入buffer_pool：就是先从free_list_中找是否有空着的frame，然后再从replacer中找根据替换原则找到下一个可替换写入的frame，找到该frameid后将要new或者读取的page的指针放入该frame中。</li>
+<li>离开buffer_pool：如果该page要被删除，则将该page的数据清除，包括元数据，然后将该frame放入free_list中。如果只是Unpin，则放入replacer等待被替换就好。</li>
+<li>实际实现中，<strong>buffer_pool已经初始化好了各个page的数据结构，读入和卸载都只是修改page的数据和元数据，并不是新建或者消除一个Page对象</strong>。</li>
+<li>跟硬盘数据的交互有一个disk_manager对象来进行磁盘端的读取，删除和写入。</li>
+</ol>
+<h2 id="Parallel-Buffer-Pool-Manager"><a href="#Parallel-Buffer-Pool-Manager" class="headerlink" title="Parallel Buffer Pool Manager"></a>Parallel Buffer Pool Manager</h2><p>关键数据结构：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 指针数组，存放指向各个BufferPool的指针</span><br>BufferPoolManagerInstance **bpms_;<br><span class="hljs-comment">// BufferPool的数目</span><br><span class="hljs-type">size_t</span> num_instances_;<br></code></pre></td></tr></table></figure>
+
+<p>关键实现逻辑：</p>
+<ol>
+<li><p>其实就一个逻辑，根据pageid轮流调用不同的bufferpool，从而分担workload，提高并行度。即将page放在第pageid%num_instances个bufferpool中，类似哈希表。</p>
+</li>
+<li><p>每个buffer_pool都有一个mutex，即latch，在bufferpool的每个函数上加锁来避免多线程带来的问题.</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 加锁，并自动释放</span><br>std::scoped_lock lock&#123;latch_&#125;;<br></code></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>整体实现还是比较简单，整体就是要弄清楚下面三个问题：</p>
+<ol>
+<li>LRU中，多次Unpin并不表示该page被新使用了，所以Unpin时如果该frame在replacer中并不需要将该frame提到queue的头部。新加入的就会比后面的更晚被使用，因为如果后面的有更新被使用的都从queue中被移除了。</li>
+<li>指针数组pages_就是buffer_pool，<strong>它的索引就是frame_id</strong>，表示buffer_pool中的位置。</li>
+<li>buffer_pool已经初始化好了各个page的数据结构，读入和卸载都只是修改page的数据和元数据，并不是新建或者消除一个Page对象。</li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DataBase/" class="category-chain-item">DataBase</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/DataBase/CMU15-445/" class="category-chain-item">CMU15-445</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/DataBase/CMU15-445/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/" class="category-chain-item">实验笔记</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/DataBase/">#DataBase</a>
+      
+        <a href="/tags/CMU15-445/">#CMU15-445</a>
+      
+        <a href="/tags/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/">#实验笔记</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Project</div>
+      <div>http://example.com/2022/06/28/DB_Notes/project1-Buffer_Pool/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Ker</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年6月28日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/06/28/DB_Notes/project2-Hash_Index/" title="Project">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Project</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/06/24/cppLearning/%E5%88%B7%E9%A2%98%E7%AC%94%E8%AE%B0/" title="刷题笔记">
+                        <span class="hidden-mobile">刷题笔记</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.4.17/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"VtKS69UKvz35BgXDDVIQEGE4-gzGzoHsz","appKey":"bG11bzUjWDTpU92caRbF3oSM","path":"window.location.pathname","placeholder":null,"avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":true,"recordIP":true,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":true},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
