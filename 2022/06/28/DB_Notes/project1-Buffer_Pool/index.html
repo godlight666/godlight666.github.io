@@ -18,13 +18,13 @@
   
     <meta name="description" content="Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Project">
+<meta property="og:title" content="Project1 - Buffer Pool">
 <meta property="og:url" content="http://example.com/2022/06/28/DB_Notes/project1-Buffer_Pool/index.html">
 <meta property="og:site_name" content="Ker&#39;s Blog">
 <meta property="og:description" content="Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-06-28T11:39:14.611Z">
-<meta property="article:modified_time" content="2022-06-28T11:39:14.611Z">
+<meta property="article:published_time" content="2022-06-28T11:47:47.308Z">
+<meta property="article:modified_time" content="2022-06-28T11:47:47.308Z">
 <meta property="article:author" content="Ker">
 <meta property="article:tag" content="DataBase">
 <meta property="article:tag" content="CMU15-445">
@@ -33,7 +33,7 @@
   
   
   
-  <title>Project - Ker&#39;s Blog</title>
+  <title>Project1 - Buffer Pool - Ker&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -198,7 +198,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Project"></span>
+            <span id="subtitle" data-typed-text="Project1 - Buffer Pool"></span>
           
         </div>
 
@@ -209,7 +209,7 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-06-28 19:39" pubdate>
+        <time datetime="2022-06-28 19:47" pubdate>
           2022年6月28日 晚上
         </time>
       </span>
@@ -270,7 +270,7 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Project</h1>
+            <h1 style="display: none">Project1 - Buffer Pool</h1>
             
             
               <div class="markdown-body">
@@ -378,7 +378,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Project</div>
+      <div>Project1 - Buffer Pool</div>
       <div>http://example.com/2022/06/28/DB_Notes/project1-Buffer_Pool/</div>
     </div>
     <div class="license-meta">
@@ -421,18 +421,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/06/28/DB_Notes/README/" title="">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile"></span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/06/28/DB_Notes/project2-Hash_Index/" title="Project">
-                        <span class="hidden-mobile">Project</span>
+                      <a href="/2022/06/28/DB_Notes/project2-Hash_Index/" title="Project2 - Extendible Hash Index">
+                        <span class="hidden-mobile">Project2 - Extendible Hash Index</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
