@@ -16,24 +16,29 @@
   <meta name="author" content="Rui">
   <meta name="keywords" content="">
   
-    <meta name="description" content="Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,">
+    <meta name="description" content="Sorting &amp; AggregationExternal Merge SortWhy we need sort 关系模型是无序的，有时候查询要求结果按照某种顺序排列（order by）  除了上面这种最直接的需求，还有很多间接的需求，需要利用有序的特性  用来去重（distinct）  有序的加入B+ tree index会更快  聚合Aggregation（group by）  。。。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Project1 - Buffer Pool">
-<meta property="og:url" content="http://example.com/2022/06/28/DB_Notes/project1-Buffer_Pool/index.html">
+<meta property="og:title" content="Sorting &amp; Aggregation in Database">
+<meta property="og:url" content="http://example.com/2022/07/03/DB_Notes/Lectures/09-Sorting&Aggregation/index.html">
 <meta property="og:site_name" content="Rui&#39;s Blog">
-<meta property="og:description" content="Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,">
+<meta property="og:description" content="Sorting &amp; AggregationExternal Merge SortWhy we need sort 关系模型是无序的，有时候查询要求结果按照某种顺序排列（order by）  除了上面这种最直接的需求，还有很多间接的需求，需要利用有序的特性  用来去重（distinct）  有序的加入B+ tree index会更快  聚合Aggregation（group by）  。。。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-06-28T11:47:47.308Z">
-<meta property="article:modified_time" content="2022-06-28T11:47:47.308Z">
+<meta property="og:image" content="https://raw.githubusercontent.com/godlight666/picgo/main/screenshot_2.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/godlight666/picgo/main/screenshot_3.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/godlight666/picgo/main/screenshot_4.png">
+<meta property="article:published_time" content="2022-07-02T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-07-03T11:03:27.074Z">
 <meta property="article:author" content="Rui">
-<meta property="article:tag" content="实验笔记">
 <meta property="article:tag" content="DataBase">
 <meta property="article:tag" content="CMU15-445">
+<meta property="article:tag" content="课程笔记">
+<meta property="article:tag" content="外部排序">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/godlight666/picgo/main/screenshot_2.png">
   
   
   
-  <title>Project1 - Buffer Pool - Rui&#39;s Blog</title>
+  <title>Sorting &amp; Aggregation in Database - Rui&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -198,7 +203,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Project1 - Buffer Pool"></span>
+            <span id="subtitle" data-typed-text="Sorting &amp; Aggregation in Database"></span>
           
         </div>
 
@@ -209,8 +214,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-06-28 19:47" pubdate>
-          2022年6月28日 晚上
+        <time datetime="2022-07-03 00:00" pubdate>
+          2022年7月3日 凌晨
         </time>
       </span>
     
@@ -221,7 +226,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2k 字
+          1.5k 字
         
       </span>
     
@@ -232,7 +237,7 @@
         
         
         
-          17 分钟
+          13 分钟
         
       </span>
     
@@ -270,51 +275,58 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Project1 - Buffer Pool</h1>
+            <h1 style="display: none">Sorting &amp; Aggregation in Database</h1>
             
             
               <div class="markdown-body">
                 
-                <h1 id="Buffer-Pool实现"><a href="#Buffer-Pool实现" class="headerlink" title="Buffer Pool实现"></a>Buffer Pool实现</h1><h2 id="LRU-Replacer"><a href="#LRU-Replacer" class="headerlink" title="LRU Replacer"></a>LRU Replacer</h2><p>关键数据结构：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾</span><br>std::list&lt;<span class="hljs-type">frame_id_t</span>&gt; queue_;<br><span class="hljs-comment">// 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除</span><br>std::unordered_map&lt;<span class="hljs-type">frame_id_t</span>, std::list&lt;<span class="hljs-type">frame_id_t</span>&gt;::iterator&gt; map_;<br></code></pre></td></tr></table></figure>
-
-<p>关键实现逻辑：</p>
+                <h1 id="Sorting-amp-Aggregation"><a href="#Sorting-amp-Aggregation" class="headerlink" title="Sorting &amp; Aggregation"></a>Sorting &amp; Aggregation</h1><h2 id="External-Merge-Sort"><a href="#External-Merge-Sort" class="headerlink" title="External Merge Sort"></a>External Merge Sort</h2><h3 id="Why-we-need-sort"><a href="#Why-we-need-sort" class="headerlink" title="Why we need sort"></a>Why we need sort</h3><ol>
+<li><p>关系模型是无序的，有时候查询要求结果按照某种顺序排列（order by）</p>
+</li>
+<li><p>除了上面这种最直接的需求，还有很多间接的需求，需要利用有序的特性</p>
 <ol>
-<li>frame：<strong>frame表示的是buffer_pool中格子的索引</strong>，可以用来存放不同的page，格子总是那么多。<ol>
-<li>所以Victim()表示找到该frame并且新读入的page可以写入该frame</li>
-<li>Pin表示该frame中的page有用，新来的page不要用该frame</li>
-<li>Unpin表示该frame中的page用不上，可以被取代，该frame可写入。</li>
+<li><p>用来去重（distinct）</p>
+</li>
+<li><p>有序的加入B+ tree index会更快</p>
+</li>
+<li><p>聚合Aggregation（group by）</p>
+</li>
+<li><p>。。。</p>
+</li>
 </ol>
 </li>
-<li>LRU的逻辑：很巧妙，<strong>多次Unpin并不表示该page被新使用了，所以Unpin时如果该frame在replacer中并不需要将该frame提到queue的头部</strong>，该page被访问或者被使用的时候都会调用Pin，而这时候会将该frame移出，所以每次被使用的时候都会移出replacer，<strong>新加入的就会比后面的更晚被使用，因为如果后面的有更新被使用的都从queue中被移除了</strong>。</li>
 </ol>
-<h2 id="Buffer-Pool-Manager"><a href="#Buffer-Pool-Manager" class="headerlink" title="Buffer Pool Manager"></a>Buffer Pool Manager</h2><p>关键数据结构：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">/** Array of buffer pool pages. 即buffer_pool数组，数组中各个元素指向各个page。该数组的索引即为frame_id*/</span><br>Page *pages_;<br><span class="hljs-comment">/** Page table for keeping track of buffer pool pages. 存放page_id到frame_id的映射*/</span><br>std::unordered_map&lt;<span class="hljs-type">page_id_t</span>, <span class="hljs-type">frame_id_t</span>&gt; page_table_;<br><span class="hljs-comment">/** Replacer to find unpinned pages for replacement. 用来实现page替换算法，上面的LRU是它的子类*/</span><br>Replacer *replacer_;<br><span class="hljs-comment">/** List of free pages. 记录空着的没用的frame*/</span><br>std::list&lt;<span class="hljs-type">frame_id_t</span>&gt; free_list_;<br></code></pre></td></tr></table></figure>
-
-<p>关键实现逻辑：</p>
-<ol>
-<li>索引：指针数组pages_就是buffer_pool，<strong>它的索引就是frame_id</strong>，表示buffer_pool中的位置。</li>
-<li>放入buffer_pool：就是先从free_list_中找是否有空着的frame，然后再从replacer中找根据替换原则找到下一个可替换写入的frame，找到该frameid后将要new或者读取的page的指针放入该frame中。</li>
-<li>离开buffer_pool：如果该page要被删除，则将该page的数据清除，包括元数据，然后将该frame放入free_list中。如果只是Unpin，则放入replacer等待被替换就好。</li>
-<li>实际实现中，<strong>buffer_pool已经初始化好了各个page的数据结构，读入和卸载都只是修改page的数据和元数据，并不是新建或者消除一个Page对象</strong>。</li>
-<li>跟硬盘数据的交互有一个disk_manager对象来进行磁盘端的读取，删除和写入。</li>
-</ol>
-<h2 id="Parallel-Buffer-Pool-Manager"><a href="#Parallel-Buffer-Pool-Manager" class="headerlink" title="Parallel Buffer Pool Manager"></a>Parallel Buffer Pool Manager</h2><p>关键数据结构：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 指针数组，存放指向各个BufferPool的指针</span><br>BufferPoolManagerInstance **bpms_;<br><span class="hljs-comment">// BufferPool的数目</span><br><span class="hljs-type">size_t</span> num_instances_;<br></code></pre></td></tr></table></figure>
-
-<p>关键实现逻辑：</p>
-<ol>
-<li><p>其实就一个逻辑，根据pageid轮流调用不同的bufferpool，从而分担workload，提高并行度。即将page放在第pageid%num_instances个bufferpool中，类似哈希表。</p>
+<h3 id="how-to-sort"><a href="#how-to-sort" class="headerlink" title="how to sort"></a>how to sort</h3><ol>
+<li><p>可以放入内存时，直接用各种排序算法就好（比如快排）</p>
 </li>
-<li><p>每个buffer_pool都有一个mutex，即latch，在bufferpool的每个函数上加锁来避免多线程带来的问题.</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 加锁，并自动释放</span><br>std::scoped_lock lock&#123;latch_&#125;;<br></code></pre></td></tr></table></figure></li>
+<li><p>往往内存中一次性放不下，需要使用外部排序算法，比如<strong>External Merge Sort</strong></p>
+</li>
 </ol>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>整体实现还是比较简单，整体就是要弄清楚下面三个问题：</p>
+<h3 id="External-Merge-Sort-1"><a href="#External-Merge-Sort-1" class="headerlink" title="External Merge Sort"></a>External Merge Sort</h3><p>外部归并排序。</p>
+<p>主要有两个阶段：</p>
 <ol>
-<li>LRU中，多次Unpin并不表示该page被新使用了，所以Unpin时如果该frame在replacer中并不需要将该frame提到queue的头部。新加入的就会比后面的更晚被使用，因为如果后面的有更新被使用的都从queue中被移除了。</li>
-<li>指针数组pages_就是buffer_pool，<strong>它的索引就是frame_id</strong>，表示buffer_pool中的位置。</li>
-<li>buffer_pool已经初始化好了各个page的数据结构，读入和卸载都只是修改page的数据和元数据，并不是新建或者消除一个Page对象。</li>
+<li><p>将整体数据划分为一个个内存能够放下的RUNs，并在每个RUN内部对数据根据规则进行排序。</p>
+</li>
+<li><p>将两个（或多个）排序好的RUN进行merge，<mark>就是用两个（或多个）指针，取小的写入目标pages，并且写满了一部分（一个page）就将该部分flush进磁盘</mark>（或者其他的大的存储空间）</p>
+</li>
 </ol>
+<p>例如，当用2-way merge时流程和cost如下图所示：先将每个RUN（这里是一个page大小）内部排好序，然后每次合并2个RUNs（内部有多个page），并迭代下去。所以PASS的数目时LOG2。</p>
+<img title="" src="https://raw.githubusercontent.com/godlight666/picgo/main/screenshot_2.png" srcset="/img/loading.gif" lazyload alt="" width="741" data-align="center">
+
+<p><mark>但是上图的局限性在于</mark>，当buffer_pool中可以读入大于3个page（2个输入1个输出）时，并没有充分利用，因为只能用上两个RUNs，所以希望能够充分利用多个buffer page，可以一次性合并多个RUN。当一次性可以读入B个pages时，时间复杂度就变为如下图所示。</p>
+<p>在第一阶段，即Pass #0时，<mark>将N个pages（总数据）一次性读入B个pages，B个pages内部进行内存内的排序，变为一个RUN（B个pages）。从而将总数据分为N&#x2F;B个RUN</mark>，每个RUN内部有序。</p>
+<p>在第二阶段，就开始合并各个RUNs成为一个更大的RUN，由于需要留一个page空间作为输出（写满一个page就可以flush，所以不管RUN多大留一个就可以），并且对于每个RUN，每次只需要往内存中读入一个page就行。<mark>所以每次可以同时合并B-1个RUN成为一个RUN。由于总共有N&#x2F;B个RUN，所以总共需要LOG(B-1)(N&#x2F;B)轮合并</mark>。</p>
+<img title="" src="https://raw.githubusercontent.com/godlight666/picgo/main/screenshot_3.png" srcset="/img/loading.gif" lazyload alt="" width="683" data-align="center">
+
+<h2 id="Aggregations"><a href="#Aggregations" class="headerlink" title="Aggregations"></a>Aggregations</h2><p>就是GROUP BY，只需要将一样的放在一起就行。有两种实现方式</p>
+<h3 id="Sorting"><a href="#Sorting" class="headerlink" title="Sorting"></a>Sorting</h3><p>很直接的，就是根据GROUP BY选中的列进行排序，一样的就会在一起了。</p>
+<p>优化的方式就是先根据其他语句过滤掉不用的行（WHERE），不用的列（比如不在select中的），根据对应列进行排序就是。</p>
+<h3 id="Hashing"><a href="#Hashing" class="headerlink" title="Hashing"></a>Hashing</h3><p>如果不要求顺序（比如distinct或GROUP BY），用hash的损耗会比sorting小的多。</p>
+<p>如果内存装的下（即一整个hash table都可以放在内存中），直接就用hash去重或者分组（hash到同一个）。</p>
+<p>如果内存装不下，就需要用下面的方法，分为两个阶段：<mark>先用一个hash分区，分成能放入内存的区。然后再用另一个hash来得到结果。这个也是分治的思想。</mark></p>
+<h4 id="阶段一-Partition"><a href="#阶段一-Partition" class="headerlink" title="阶段一 Partition"></a>阶段一 Partition</h4><p>思想就是先用一个hash来将所有的数据分区。由于同一个key得到的hash就是一样的，所以会分在同一个区。当Buffer pool有B个pages时，用B-1个pages来装分区的，用剩下的一个来存放结果。所以第一个hash会得到B-1个分区。</p>
+<h4 id="阶段二-Rehash"><a href="#阶段二-Rehash" class="headerlink" title="阶段二 Rehash"></a>阶段二 Rehash</h4><p>这个阶段需要对上面得到的B-1个分区进行操作。对每个分区进行第二个hash（与阶段一的hash不同），生成这个分区的hash表，然后根据查询逻辑将这个分区表的结果放入结果数组中。并且如下所示，有时对一个key的多个value会追加到一个tuple中，方便进行运算。</p>
+<img title="" src="https://raw.githubusercontent.com/godlight666/picgo/main/screenshot_4.png" srcset="/img/loading.gif" lazyload alt="" width="563" data-align="center">
 
                 
               </div>
@@ -343,7 +355,7 @@
   
     <span>></span>
     
-  <a href="/categories/DataBase/CMU15-445/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/" class="category-chain-item">实验笔记</a>
+  <a href="/categories/DataBase/CMU15-445/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/" class="category-chain-item">课程笔记</a>
   
   
 
@@ -362,11 +374,13 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/">#实验笔记</a>
-      
         <a href="/tags/DataBase/">#DataBase</a>
       
         <a href="/tags/CMU15-445/">#CMU15-445</a>
+      
+        <a href="/tags/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">#课程笔记</a>
+      
+        <a href="/tags/%E5%A4%96%E9%83%A8%E6%8E%92%E5%BA%8F/">#外部排序</a>
       
     </div>
   
@@ -378,8 +392,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Project1 - Buffer Pool</div>
-      <div>http://example.com/2022/06/28/DB_Notes/project1-Buffer_Pool/</div>
+      <div>Sorting &amp; Aggregation in Database</div>
+      <div>http://example.com/2022/07/03/DB_Notes/Lectures/09-Sorting&amp;Aggregation/</div>
     </div>
     <div class="license-meta">
       
@@ -391,7 +405,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年6月28日</div>
+          <div>2022年7月3日</div>
         </div>
       
       
@@ -421,18 +435,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/06/28/DB_Notes/README/" title="CMU15-445 实验笔记">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">CMU15-445 实验笔记</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/06/28/DB_Notes/project2-Hash_Index/" title="Project2 - Extendible Hash Index">
-                        <span class="hidden-mobile">Project2 - Extendible Hash Index</span>
+                      <a href="/2022/06/28/DB_Notes/README/" title="CMU15-445 实验笔记">
+                        <span class="hidden-mobile">CMU15-445 实验笔记</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

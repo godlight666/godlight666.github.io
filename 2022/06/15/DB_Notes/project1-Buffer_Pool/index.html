@@ -16,22 +16,24 @@
   <meta name="author" content="Rui">
   <meta name="keywords" content="">
   
-    <meta name="description" content="CMU15-445 实验笔记CMU15-445 fall 2021实验笔记 课程地址：https:&#x2F;&#x2F;15445.courses.cs.cmu.edu&#x2F;fall2021&#x2F; 完成情况：   PROJECT #0 - C++ PRIMER  PROJECT #1 - BUFFER POOL  PROJECT #2 - EXTENDIBLE HASH INDEX  PROJECT #3 - QUERY">
+    <meta name="description" content="Buffer Pool实现Buffer Pool 是数据库用来管理内存空间的结构。后面的数据存储都构建在Buffer Pool上层。 通过Buffer Pool分配pages进行写入，并将修改后的pages写入到磁盘。读取数据时，通过将磁盘数据读入Buffer Pool分配的page中（即内存），再进行相关操作。 Buffer Pool也会根据置换算法（这里用的LRU）来将磁盘中的Page读入或写">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CMU15-445 实验笔记">
-<meta property="og:url" content="http://example.com/2022/06/28/DB_Notes/README/index.html">
+<meta property="og:title" content="Project1 - Buffer Pool">
+<meta property="og:url" content="http://example.com/2022/06/15/DB_Notes/project1-Buffer_Pool/index.html">
 <meta property="og:site_name" content="Rui&#39;s Blog">
-<meta property="og:description" content="CMU15-445 实验笔记CMU15-445 fall 2021实验笔记 课程地址：https:&#x2F;&#x2F;15445.courses.cs.cmu.edu&#x2F;fall2021&#x2F; 完成情况：   PROJECT #0 - C++ PRIMER  PROJECT #1 - BUFFER POOL  PROJECT #2 - EXTENDIBLE HASH INDEX  PROJECT #3 - QUERY">
+<meta property="og:description" content="Buffer Pool实现Buffer Pool 是数据库用来管理内存空间的结构。后面的数据存储都构建在Buffer Pool上层。 通过Buffer Pool分配pages进行写入，并将修改后的pages写入到磁盘。读取数据时，通过将磁盘数据读入Buffer Pool分配的page中（即内存），再进行相关操作。 Buffer Pool也会根据置换算法（这里用的LRU）来将磁盘中的Page读入或写">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-06-28T12:14:29.747Z">
-<meta property="article:modified_time" content="2022-06-30T03:11:33.659Z">
+<meta property="article:published_time" content="2022-06-14T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-07-03T11:03:27.074Z">
 <meta property="article:author" content="Rui">
 <meta property="article:tag" content="实验笔记">
+<meta property="article:tag" content="DataBase">
+<meta property="article:tag" content="CMU15-445">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>CMU15-445 实验笔记 - Rui&#39;s Blog</title>
+  <title>Project1 - Buffer Pool - Rui&#39;s Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -196,7 +198,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="CMU15-445 实验笔记"></span>
+            <span id="subtitle" data-typed-text="Project1 - Buffer Pool"></span>
           
         </div>
 
@@ -207,8 +209,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-06-28 20:14" pubdate>
-          2022年6月28日 晚上
+        <time datetime="2022-06-15 00:00" pubdate>
+          2022年6月15日 凌晨
         </time>
       </span>
     
@@ -219,7 +221,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          290 字
+          2.2k 字
         
       </span>
     
@@ -230,7 +232,7 @@
         
         
         
-          3 分钟
+          19 分钟
         
       </span>
     
@@ -268,27 +270,54 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">CMU15-445 实验笔记</h1>
+            <h1 style="display: none">Project1 - Buffer Pool</h1>
             
             
               <div class="markdown-body">
                 
-                <h1 id="CMU15-445-实验笔记"><a href="#CMU15-445-实验笔记" class="headerlink" title="CMU15-445 实验笔记"></a>CMU15-445 实验笔记</h1><p>CMU15-445 fall 2021实验笔记</p>
-<p>课程地址：<a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2021/">https://15445.courses.cs.cmu.edu/fall2021/</a></p>
-<p>完成情况：</p>
-<ul>
-<li><input disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2021/project0/">PROJECT #0 - C++ PRIMER</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2021/project1/">PROJECT #1 - BUFFER POOL</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2021/project2/">PROJECT #2 - EXTENDIBLE HASH INDEX</a></li>
-<li><input disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2021/project3/">PROJECT #3 - QUERY EXECUTION</a></li>
-<li><input disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2021/project4/">PROJECT #4 - CONCURRENCY CONTROL</a></li>
-</ul>
-<p>已完成lab的实验笔记：</p>
-<ul>
-<li><input checked="" disabled="" type="checkbox"> <a href="/2022/06/15/DB_Notes/project1-Buffer_Pool/" title="Project1 - Buffer Pool">Project1 - Buffer Pool</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="/2022/06/25/DB_Notes/project2-Hash_Index/" title="Project2 - Extendible Hash Index">Project2 - Extendible Hash Index</a></li>
-</ul>
-<p>根据课程要求，未上传任何实验源码。有需求请联系我。</p>
+                <h1 id="Buffer-Pool实现"><a href="#Buffer-Pool实现" class="headerlink" title="Buffer Pool实现"></a>Buffer Pool实现</h1><p>Buffer Pool 是数据库用来管理内存空间的结构。后面的数据存储都构建在Buffer Pool上层。</p>
+<p>通过Buffer Pool分配pages进行写入，并将修改后的pages写入到磁盘。读取数据时，通过将磁盘数据读入Buffer Pool分配的page中（即内存），再进行相关操作。</p>
+<p>Buffer Pool也会根据置换算法（这里用的LRU）来将磁盘中的Page读入或写出。</p>
+<h2 id="LRU-Replacer"><a href="#LRU-Replacer" class="headerlink" title="LRU Replacer"></a>LRU Replacer</h2><p>关键数据结构：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾</span><br>std::list&lt;<span class="hljs-type">frame_id_t</span>&gt; queue_;<br><span class="hljs-comment">// 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除</span><br>std::unordered_map&lt;<span class="hljs-type">frame_id_t</span>, std::list&lt;<span class="hljs-type">frame_id_t</span>&gt;::iterator&gt; map_;<br></code></pre></td></tr></table></figure>
+
+<p>关键实现逻辑：</p>
+<ol>
+<li>frame：<strong>frame表示的是buffer_pool中格子的索引</strong>，可以用来存放不同的page，格子总是那么多。<ol>
+<li>所以Victim()表示找到该frame并且新读入的page可以写入该frame</li>
+<li>Pin表示该frame中的page有用，新来的page不要用该frame</li>
+<li>Unpin表示该frame中的page用不上，可以被取代，该frame可写入。</li>
+</ol>
+</li>
+<li>LRU的逻辑：很巧妙，<strong>多次Unpin并不表示该page被新使用了，所以Unpin时如果该frame在replacer中并不需要将该frame提到queue的头部</strong>，该page被访问或者被使用的时候都会调用Pin，而这时候会将该frame移出，所以每次被使用的时候都会移出replacer，<strong>新加入的就会比后面的更晚被使用，因为如果后面的有更新被使用的都从queue中被移除了</strong>。</li>
+</ol>
+<h2 id="Buffer-Pool-Manager"><a href="#Buffer-Pool-Manager" class="headerlink" title="Buffer Pool Manager"></a>Buffer Pool Manager</h2><p>关键数据结构：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">/** Array of buffer pool pages. 即buffer_pool数组，数组中各个元素指向各个page。该数组的索引即为frame_id*/</span><br>Page *pages_;<br><span class="hljs-comment">/** Page table for keeping track of buffer pool pages. 存放page_id到frame_id的映射*/</span><br>std::unordered_map&lt;<span class="hljs-type">page_id_t</span>, <span class="hljs-type">frame_id_t</span>&gt; page_table_;<br><span class="hljs-comment">/** Replacer to find unpinned pages for replacement. 用来实现page替换算法，上面的LRU是它的子类*/</span><br>Replacer *replacer_;<br><span class="hljs-comment">/** List of free pages. 记录空着的没用的frame*/</span><br>std::list&lt;<span class="hljs-type">frame_id_t</span>&gt; free_list_;<br></code></pre></td></tr></table></figure>
+
+<p>关键实现逻辑：</p>
+<ol>
+<li>索引：指针数组pages_就是buffer_pool，<strong>它的索引就是frame_id</strong>，表示buffer_pool中的位置。</li>
+<li>放入buffer_pool：就是先从free_list_中找是否有空着的frame，然后再从replacer中找根据替换原则找到下一个可替换写入的frame，找到该frameid后将要new或者读取的page的指针放入该frame中。</li>
+<li>离开buffer_pool：如果该page要被删除，则将该page的数据清除，包括元数据，然后将该frame放入free_list中。如果只是Unpin，则放入replacer等待被替换就好。</li>
+<li>实际实现中，<strong>buffer_pool已经初始化好了各个page的数据结构，读入和卸载都只是修改page的数据和元数据，并不是新建或者消除一个Page对象</strong>。</li>
+<li>跟硬盘数据的交互有一个disk_manager对象来进行磁盘端的读取，删除和写入。</li>
+</ol>
+<h2 id="Parallel-Buffer-Pool-Manager"><a href="#Parallel-Buffer-Pool-Manager" class="headerlink" title="Parallel Buffer Pool Manager"></a>Parallel Buffer Pool Manager</h2><p>关键数据结构：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 指针数组，存放指向各个BufferPool的指针</span><br>BufferPoolManagerInstance **bpms_;<br><span class="hljs-comment">// BufferPool的数目</span><br><span class="hljs-type">size_t</span> num_instances_;<br></code></pre></td></tr></table></figure>
+
+<p>关键实现逻辑：</p>
+<ol>
+<li><p>其实就一个逻辑，根据pageid轮流调用不同的bufferpool，从而分担workload，提高并行度。即将page放在第pageid%num_instances个bufferpool中，类似哈希表。</p>
+</li>
+<li><p>每个buffer_pool都有一个mutex，即latch，在bufferpool的每个函数上加锁来避免多线程带来的问题.</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 加锁，并自动释放</span><br>std::scoped_lock lock&#123;latch_&#125;;<br></code></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>整体实现还是比较简单，整体就是要弄清楚下面三个问题：</p>
+<ol>
+<li>LRU中，多次Unpin并不表示该page被新使用了，所以Unpin时如果该frame在replacer中并不需要将该frame提到queue的头部。新加入的就会比后面的更晚被使用，因为如果后面的有更新被使用的都从queue中被移除了。</li>
+<li>指针数组pages_就是buffer_pool，<strong>它的索引就是frame_id</strong>，表示buffer_pool中的位置。</li>
+<li>buffer_pool已经初始化好了各个page的数据结构，读入和卸载都只是修改page的数据和元数据，并不是新建或者消除一个Page对象。</li>
+</ol>
 
                 
               </div>
@@ -338,6 +367,10 @@
       
         <a href="/tags/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/">#实验笔记</a>
       
+        <a href="/tags/DataBase/">#DataBase</a>
+      
+        <a href="/tags/CMU15-445/">#CMU15-445</a>
+      
     </div>
   
 </div>
@@ -348,8 +381,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>CMU15-445 实验笔记</div>
-      <div>http://example.com/2022/06/28/DB_Notes/README/</div>
+      <div>Project1 - Buffer Pool</div>
+      <div>http://example.com/2022/06/15/DB_Notes/project1-Buffer_Pool/</div>
     </div>
     <div class="license-meta">
       
@@ -361,7 +394,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年6月28日</div>
+          <div>2022年6月15日</div>
         </div>
       
       
@@ -391,21 +424,15 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/07/03/DB_Notes/Lectures/09-Sorting&amp;Aggregation/" title="Sorting &amp; Aggregation in Database">
+                      <a href="/2022/06/24/cppLearning/%E5%88%B7%E9%A2%98%E7%AC%94%E8%AE%B0/" title="刷题笔记">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Sorting &amp; Aggregation in Database</span>
+                        <span class="hidden-mobile">刷题笔记</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
                   </article>
                   <article class="post-next col-6">
                     
-                    
-                      <a href="/2022/06/25/DB_Notes/project2-Hash_Index/" title="Project2 - Extendible Hash Index">
-                        <span class="hidden-mobile">Project2 - Extendible Hash Index</span>
-                        <span class="visible-mobile">下一篇</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
                     
                   </article>
                 </div>

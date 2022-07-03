@@ -225,6 +225,87 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
+        <a href="/2022/07/03/DB_Notes/Lectures/09-Sorting&amp;Aggregation/" target="_self">
+          Sorting &amp; Aggregation in Database
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/07/03/DB_Notes/Lectures/09-Sorting&amp;Aggregation/" target="_self">
+        <div>
+          Sorting &amp; AggregationExternal Merge SortWhy we need sort 关系模型是无序的，有时候查询要求结果按照某种顺序排列（order by）  除了上面这种最直接的需求，还有很多间接的需求，需要利用有序的特性  用来去重（distinct）  有序的加入B+ tree index会更快  聚合Aggregation（group by）  。。。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-07-03 00:00" pubdate>
+              2022-07-03
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DataBase/" class="category-chain-item">DataBase</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/DataBase/CMU15-445/" class="category-chain-item">CMU15-445</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/DataBase/CMU15-445/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/" class="category-chain-item">课程笔记</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/DataBase/">#DataBase</a>
+            
+              <a href="/tags/CMU15-445/">#CMU15-445</a>
+            
+              <a href="/tags/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">#课程笔记</a>
+            
+              <a href="/tags/%E5%A4%96%E9%83%A8%E6%8E%92%E5%BA%8F/">#外部排序</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
         <a href="/2022/06/28/DB_Notes/README/" target="_self">
           CMU15-445 实验笔记
         </a>
@@ -300,92 +381,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
-        <a href="/2022/06/28/DB_Notes/project1-Buffer_Pool/" target="_self">
-          Project1 - Buffer Pool
-        </a>
-      </h1>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/28/DB_Notes/project1-Buffer_Pool/" target="_self">
-        <div>
-          Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-28 19:47" pubdate>
-              2022-06-28
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/DataBase/" class="category-chain-item">DataBase</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/DataBase/CMU15-445/" class="category-chain-item">CMU15-445</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/DataBase/CMU15-445/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/" class="category-chain-item">实验笔记</a>
-  
-  
-
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/">#实验笔记</a>
-            
-              <a href="/tags/DataBase/">#DataBase</a>
-            
-              <a href="/tags/CMU15-445/">#CMU15-445</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/2022/06/28/DB_Notes/project2-Hash_Index/" target="_self">
+        <a href="/2022/06/25/DB_Notes/project2-Hash_Index/" target="_self">
           Project2 - Extendible Hash Index
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/28/DB_Notes/project2-Hash_Index/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/25/DB_Notes/project2-Hash_Index/" target="_self">
         <div>
           Extendible Hash Index实现Project #2 - Extendible Hash Index | CMU 15-445&#x2F;645 :: Intro to Database Systems (Fall 2021) 实现一个hash表用来存储数据。有key和value，hash函数对key生效，使用的xxHash。 整体结构：一个hash table对象由以下结构组成
         </div>
@@ -395,8 +397,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-06-28 19:47" pubdate>
-              2022-06-28
+            <time datetime="2022-06-25 00:00" pubdate>
+              2022-06-25
             </time>
           </div>
         
@@ -508,6 +510,85 @@
               <a href="/tags/cpp/">#cpp</a>
             
               <a href="/tags/Leetcode/">#Leetcode</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
+        <a href="/2022/06/15/DB_Notes/project1-Buffer_Pool/" target="_self">
+          Project1 - Buffer Pool
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/15/DB_Notes/project1-Buffer_Pool/" target="_self">
+        <div>
+          Buffer Pool实现Buffer Pool 是数据库用来管理内存空间的结构。后面的数据存储都构建在Buffer Pool上层。 通过Buffer Pool分配pages进行写入，并将修改后的pages写入到磁盘。读取数据时，通过将磁盘数据读入Buffer Pool分配的page中（即内存），再进行相关操作。 Buffer Pool也会根据置换算法（这里用的LRU）来将磁盘中的Page读入或写
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-06-15 00:00" pubdate>
+              2022-06-15
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DataBase/" class="category-chain-item">DataBase</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/DataBase/CMU15-445/" class="category-chain-item">CMU15-445</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/DataBase/CMU15-445/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/" class="category-chain-item">实验笔记</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/">#实验笔记</a>
+            
+              <a href="/tags/DataBase/">#DataBase</a>
+            
+              <a href="/tags/CMU15-445/">#CMU15-445</a>
             
           </div>
         
