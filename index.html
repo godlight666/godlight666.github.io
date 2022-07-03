@@ -300,15 +300,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
-        <a href="/2022/06/28/DB_Notes/project1-Buffer_Pool/" target="_self">
-          Project1 - Buffer Pool
+        <a href="/2022/06/28/DB_Notes/project2-Hash_Index/" target="_self">
+          Project2 - Extendible Hash Index
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/28/DB_Notes/project1-Buffer_Pool/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/28/DB_Notes/project2-Hash_Index/" target="_self">
         <div>
-          Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,
+          Extendible Hash Index实现Project #2 - Extendible Hash Index | CMU 15-445&#x2F;645 :: Intro to Database Systems (Fall 2021) 实现一个hash表用来存储数据。有key和value，hash函数对key生效，使用的xxHash。 整体结构：一个hash table对象由以下结构组成
         </div>
       </a>
 
@@ -379,15 +379,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
-        <a href="/2022/06/28/DB_Notes/project2-Hash_Index/" target="_self">
-          Project2 - Extendible Hash Index
+        <a href="/2022/06/28/DB_Notes/project1-Buffer_Pool/" target="_self">
+          Project1 - Buffer Pool
         </a>
       </h1>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/28/DB_Notes/project2-Hash_Index/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/06/28/DB_Notes/project1-Buffer_Pool/" target="_self">
         <div>
-          Extendible Hash Index实现Project #2 - Extendible Hash Index | CMU 15-445&#x2F;645 :: Intro to Database Systems (Fall 2021) 实现一个hash表用来存储数据。有key和value，hash函数对key生效，使用的xxHash。 整体结构：一个hash table对象由以下结构组成
+          Buffer Pool实现LRU Replacer关键数据结构： 1234&#x2F;&#x2F; 用队列来维护replacer中的frame，新来的从头部插入，最旧的在末尾std::list&lt;frame_id_t&gt; queue_;&#x2F;&#x2F; 用来存放该frame在queue中的位置，方便当Pin调用时将该frame从replacer队列中移除std::unordered_map&lt;frame_id_t,
         </div>
       </a>
 
